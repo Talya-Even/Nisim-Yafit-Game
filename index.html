@@ -41,7 +41,6 @@
             border-top: 4px solid #556B2F;
         }
 
-        /* שילוב התמונה של יפית - גודל 70 פיקסלים */
         #player {
             position: absolute;
             bottom: 90px; 
@@ -65,7 +64,6 @@
             animation: blink 0.2s linear infinite;
         }
 
-        /* שילוב התמונה של ניסים - גודל 70 פיקסלים */
         .enemy {
             position: absolute;
             bottom: 90px;
@@ -80,7 +78,6 @@
             transition: bottom 0.3s ease; 
         }
 
-        /* שילוב התמונה של גזר - גודל 45 פיקסלים */
         .carrot {
             position: absolute;
             bottom: 180px; 
@@ -91,6 +88,19 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
+            z-index: 1;
+        }
+
+        /* אלמנט הלב החדש למשחק */
+        .heart-collectible {
+            position: absolute;
+            bottom: 250px; /* גבוה מאוד - מחייב קפיצה כפולה */
+            left: 1600px;
+            width: 40px;
+            height: 40px;
+            font-size: 30px;
+            text-align: center;
+            line-height: 40px;
             z-index: 1;
         }
 
@@ -141,9 +151,9 @@
         }
 
         .gameBtn {
-            margin-top: 20px;
+            margin-top: 15px;
             padding: 12px 28px;
-            font-size: 20px;
+            font-size: 18px;
             background-color: #2ed573;
             color: white;
             border: none;
@@ -151,6 +161,20 @@
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* עיצוב כפתורי המוזיקה */
+        .musicBtn {
+            background-color: #57606f;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 5px;
+            border: 2px solid transparent;
+        }
+
+        .musicBtn.selected {
+            border-color: #fffa65;
+            background-color: #1e90ff;
         }
 
         .restartBtn {
@@ -165,22 +189,31 @@
 </head>
 <body>
 
-    <audio id="bgMusic" src="music.mp3" loop></audio>
+    <audio id="bgMusic" loop></audio>
 
     <div id="gameArea">
         <div id="uiBar">
-            <div>ניקוד: <span id="score">0</span></div>
+            <div>ניקוד: <span id="score">0</span> / 60</div>
             <div id="lives">❤️❤️❤️</div>
         </div>
         
         <div id="player"></div>
         <div id="enemy" class="enemy"></div>
         <div id="carrot" class="carrot"></div>
+        <div id="heartItem" class="heart-collectible">❤️</div>
         <div id="ground"></div>
         
         <div id="startScreen" class="overlayScreen">
-            <div style="font-size: 45px; margin-bottom: 10px; color: #fffa65;">!! Run Nisim! Run</div>
-            <button class="gameBtn" onclick="startCountdown()">התחל משחק</button>
+            <div style="font-size: 45px; margin-bottom: 5px; color: #fffa65;">!! Run Nisim! Run</div>
+            <div style="font-size: 18px; color: #eee; margin-bottom: 15px;">השיגי 60 נקודות כדי לתפוס את ניסים!</div>
+            
+            <div style="font-size: 20px; color: #fffa65; margin-top: 10px;">בחר שיר רקע:</div>
+            <div style="display: flex; flex-direction: row; justify-content: center; margin-bottom: 15px;">
+                <button id="btnGrek" class="gameBtn musicBtn selected" onclick="selectMusic('music.mp3', 'btnGrek')">וואלה קמתי במוד של לשבור צלחות 🍽️</button>
+                <button id="btnOmer" class="gameBtn musicBtn" onclick="selectMusic('music2.mp3', 'btnOmer')">בכת של עומר אדם בלבד 🎤</button>
+            </div>
+
+            <button class="gameBtn" onclick="startCountdown()" style="background-color: #2ed573; font-size: 22px;">התחל משחק</button>
         </div>
 
         <div id="countdownScreen" class="overlayScreen">3</div>
@@ -192,7 +225,7 @@
 
         <div id="winScreen" class="overlayScreen" style="display: none;">
             <div style="max-width: 500px; font-size: 36px; color: #fff;">אין עלייך יפית יא תותחית! 😎</div>
-            <div style="max-width: 500px; font-size: 24px; margin-top: 15px;">כולנו ידענו שתתפסי את ניסים!</div>
+            <div style="max-width: 500px; font-size: 24px; margin-top: 15px;">הגעת ל-60 נקודות! כולנו ידענו שתתפסי את ניסים!</div>
             <button class="gameBtn" onclick="startCountdown()" style="background-color: #222;">שחק שוב</button>
         </div>
     </div>
@@ -202,6 +235,7 @@
         const player = document.getElementById('player');
         const enemy = document.getElementById('enemy');
         const carrot = document.getElementById('carrot');
+        const heartItem = document.getElementById('heartItem');
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
         const startScreen = document.getElementById('startScreen');
@@ -212,6 +246,7 @@
 
         let gameActive = false; 
         let isJumping = false;
+        let jumpCount = 0; // משתנה חדש לספירת קפיצות (בשביל קפיצה כפולה)
         let isInvincible = false;
         let isSquished = false; 
         
@@ -226,17 +261,39 @@
         let carrotX = 1200;
         let carrotY = 180; 
 
+        // משתני מיקום ללב האוסף
+        let heartX = 1800;
+        let heartY = 250;
+
         let baseSpeed = 5;
         let gameSpeed = baseSpeed; 
         let speedInterval; 
         
         let backgroundPosition = 0; 
+        let selectedTrack = 'music.mp3'; // דיפולט - טברנה
 
+        // פונקציה להחלפת השיר במסך הפתיחה
+        function selectMusic(trackName, btnId) {
+            selectedTrack = trackName;
+            document.getElementById('btnGrek').classList.remove('selected');
+            document.getElementById('btnOmer').classList.remove('selected');
+            document.getElementById(btnId).classList.add('selected');
+        }
+
+        // לוגיקת קפיצה כפולה משופרת
         function jump() {
             if (!gameActive || isInvincible) return;
+            
+            // קפיצה ראשונה (על הרצפה)
             if (playerY <= 92) { 
                 isJumping = true;
+                jumpCount = 1;
                 velocity = 12;
+            } 
+            // קפיצה שנייה (באוויר) - מותנה בזה שקפצה רק פעם אחת עד כה
+            else if (jumpCount === 1) {
+                jumpCount = 2;
+                velocity = 10; // עוצמת קפיצה שנייה מעט נמוכה יותר, למשחקיות טובה
             }
         }
 
@@ -245,6 +302,8 @@
             gameOverScreen.style.display = 'none';
             winScreen.style.display = 'none'; 
             
+            // טעינת וניגון השיר שנבחר
+            bgMusic.src = selectedTrack;
             bgMusic.play().catch(error => console.log("המוזיקה תופעל בלחיצה הבאה"));
 
             resetGameVariables();
@@ -272,7 +331,9 @@
             playerY = 90;
             enemyX = 900; 
             carrotX = 1300;
+            heartX = 1800; // איפוס מיקום הלב
             isSquished = false;
+            jumpCount = 0;
             
             enemy.style.bottom = '90px';
 
@@ -281,6 +342,7 @@
             player.style.bottom = playerY + 'px';
             enemy.style.left = enemyX + 'px';
             carrot.style.left = carrotX + 'px';
+            heartItem.style.left = heartX + 'px';
         }
 
         function startGame() {
@@ -298,9 +360,9 @@
             }, 10000);
         }
 
-        // בדיקה של תוצאת המשחק
         function checkGameEnd() {
-            if (score >= 25) {
+            // יעד הניקוד עודכן ל-60 נקודות
+            if (score >= 60) {
                 gameActive = false;
                 winScreen.style.display = 'flex';
                 clearInterval(speedInterval);
@@ -349,13 +411,15 @@
             backgroundPosition -= gameSpeed * 0.5; 
             gameArea.style.backgroundPosition = backgroundPosition + 'px 0px';
 
-            if (isJumping) {
+            // פיזיקת נפילה וקפיצות
+            if (isJumping || playerY > 90) {
                 velocity -= gravity;
                 playerY += velocity;
 
                 if (playerY <= 90) {
                     playerY = 90;
                     isJumping = false;
+                    jumpCount = 0; // איפוס ספירת הקפיצות בנגיעה ברצפה
                     velocity = 0;
                 }
                 player.style.bottom = playerY + 'px';
@@ -372,19 +436,27 @@
                 enemy.style.left = enemyX + 'px';
             }
 
+            // תנועת הגזר
             carrotX -= gameSpeed;
             if (carrotX < -45) { 
                 carrotX = currentWidth + Math.random() * 400 + 200;
             }
             carrot.style.left = carrotX + 'px';
 
-            // התנגשות עם ניסים
+            // תנועת הלב האוסף
+            heartX -= gameSpeed;
+            if (heartX < -40) {
+                // לב יופיע בתדירות נמוכה יותר (מרחק רנדומלי גדול יותר כדי שיהיה נדיר)
+                heartX = currentWidth + Math.random() * 1200 + 600;
+            }
+            heartItem.style.left = heartX + 'px';
+
+            // התנגשות עם ניסים (נותן 5 נקודות)
             if (!isSquished && enemyX < playerX + 65 && enemyX + 65 > playerX) {
                 if (playerY > 125 && velocity < 0) { 
-                    score += 10; 
+                    score += 5; 
                     scoreElement.innerText = score;
                     
-                    // אפקט שקיעה: ניסים יורד עמוק למטה אל תוך האדמה
                     isSquished = true;
                     enemy.style.bottom = '10px';    
                     
@@ -404,25 +476,35 @@
                 }
             }
 
-            // התנגשות עם גזר
+            // התנגשות עם גזר (נותן 2 נקודות)
             if (carrotX < playerX + 65 && carrotX + 45 > playerX) {
                 if (playerY + 70 > carrotY && playerY < carrotY + 45) {
-                    score += 1; 
+                    score += 2; 
                     scoreElement.innerText = score;
                     checkGameEnd(); 
                     carrotX = currentWidth + Math.random() * 400 + 300; 
                 }
             }
 
+            // התנגשות עם הלב בשמיים (מוסיף חיים עד מקסימום 3)
+            if (heartX < playerX + 65 && heartX + 40 > playerX) {
+                if (playerY + 70 > heartY && playerY < heartY + 40) {
+                    if (lives < 3) {
+                        lives++;
+                        updateLivesUI();
+                    }
+                    // משגרים את הלב חזרה לימין הרחק מהמסך
+                    heartX = currentWidth + Math.random() * 1500 + 1000;
+                }
+            }
+
             requestAnimationFrame(update);
         }
 
-        // --- האזנה לאירועים (מתוקן למובייל ומחשב) ---
         document.addEventListener('keydown', function(event) {
             if (event.code === 'Space') jump();
         });
 
-        // נגיעה בטלפון - התיקון שמאפשר ללחוץ על כפתור ההתחלה!
         gameArea.addEventListener('touchstart', function(event) {
             if (gameActive) {
                 jump();
