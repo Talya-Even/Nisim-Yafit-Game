@@ -41,13 +41,13 @@
             border-top: 4px solid #556B2F;
         }
 
-        /* שילוב התמונה של יפית - הוגדל ל-70 פיקסלים */
+        /* שילוב התמונה של יפית - גודל 70 פיקסלים */
         #player {
             position: absolute;
             bottom: 90px; 
             left: 60px;
-            width: 70px;  /* הוגדל מ-50 */
-            height: 70px; /* הוגדל מ-50 */
+            width: 70px;  
+            height: 70px; 
             background-image: url('Yafit.png'); 
             background-size: contain;
             background-repeat: no-repeat;
@@ -65,13 +65,13 @@
             animation: blink 0.2s linear infinite;
         }
 
-        /* שילוב התמונה של ניסים - הוגדל ל-70 פיקסלים */
+        /* שילוב התמונה של ניסים - גודל 70 פיקסלים */
         .enemy {
             position: absolute;
             bottom: 90px;
             left: 850px;
-            width: 70px;  /* הוגדל מ-50 */
-            height: 70px; /* הוגדל מ-50 */
+            width: 70px;  
+            height: 70px; 
             background-image: url('Nisim.png');
             background-size: contain;
             background-repeat: no-repeat;
@@ -80,13 +80,13 @@
             transition: bottom 0.3s ease; 
         }
 
-        /* שילוב התמונה של גזר - הוגדל ל-45 פיקסלים */
+        /* שילוב התמונה של גזר - גודל 45 פיקסלים */
         .carrot {
             position: absolute;
-            bottom: 180px; /* הוגבה מעט בהתאם לגודל החדש */
+            bottom: 180px; 
             left: 1200px;
-            width: 45px;  /* הוגדל מ-35 */
-            height: 45px; /* הוגדל מ-35 */
+            width: 45px;  
+            height: 45px; 
             background-image: url('carrot.png');
             background-size: contain;
             background-repeat: no-repeat;
@@ -179,7 +179,7 @@
         <div id="ground"></div>
         
         <div id="startScreen" class="overlayScreen">
-            <div style="font-size: 45px; margin-bottom: 10px; color: #fffa65;">!! Run Nisim! Run</div>
+            <div style="font-size: 45px; margin-bottom: 10px; color: #fffa65;">Run Nisim! Run!</div>
             <button class="gameBtn" onclick="startCountdown()">התחל משחק</button>
         </div>
 
@@ -224,7 +224,7 @@
         let playerX = 60; 
         let enemyX = 850; 
         let carrotX = 1200;
-        let carrotY = 180; // עודכן מ-170 בהתאם לגובה החדש ב-CSS
+        let carrotY = 180; 
 
         let baseSpeed = 5;
         let gameSpeed = baseSpeed; 
@@ -298,6 +298,7 @@
             }, 10000);
         }
 
+        // בדיקה של תוצאת המשחק
         function checkGameEnd() {
             if (score >= 25) {
                 gameActive = false;
@@ -365,26 +366,25 @@
 
             if (!isSquished) {
                 enemyX -= gameSpeed;
-                if (enemyX < -70) { // הותאם לרוחב 70
+                if (enemyX < -70) { 
                     enemyX = currentWidth + Math.random() * 200;
                 }
                 enemy.style.left = enemyX + 'px';
             }
 
             carrotX -= gameSpeed;
-            if (carrotX < -45) { // הותאם לרוחב 45
+            if (carrotX < -45) { 
                 carrotX = currentWidth + Math.random() * 400 + 200;
             }
             carrot.style.left = carrotX + 'px';
 
-            // 4. התנגשות אויב (עודכן לטווחים של 70 פיקסלים)
+            // התנגשות עם ניסים
             if (!isSquished && enemyX < playerX + 65 && enemyX + 65 > playerX) {
-                // נחיתה מלמעלה - יפית צריכה להיות מספיק גבוהה מעל ראשו של ניסים
                 if (playerY > 125 && velocity < 0) { 
                     score += 10; 
                     scoreElement.innerText = score;
                     
-                    // אפקט השקיעה המגניב לתוך האדמה
+                    // אפקט שקיעה: ניסים יורד עמוק למטה אל תוך האדמה
                     isSquished = true;
                     enemy.style.bottom = '10px';    
                     
@@ -404,7 +404,7 @@
                 }
             }
 
-            // 5. התנגשות גזר (עודכן לגודל החדש)
+            // התנגשות עם גזר
             if (carrotX < playerX + 65 && carrotX + 45 > playerX) {
                 if (playerY + 70 > carrotY && playerY < carrotY + 45) {
                     score += 1; 
@@ -417,14 +417,18 @@
             requestAnimationFrame(update);
         }
 
+        // --- האזנה לאירועים (מתוקן למובייל ומחשב) ---
         document.addEventListener('keydown', function(event) {
             if (event.code === 'Space') jump();
         });
 
+        // נגיעה בטלפון - התיקון שמאפשר ללחוץ על כפתור ההתחלה!
         gameArea.addEventListener('touchstart', function(event) {
-            jump();
-            event.preventDefault();
-        });
+            if (gameActive) {
+                jump();
+                event.preventDefault(); 
+            }
+        }, { passive: false });
     </script>
 
 </body>
